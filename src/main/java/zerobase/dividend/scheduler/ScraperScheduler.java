@@ -2,10 +2,13 @@ package zerobase.dividend.scheduler;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import zerobase.dividend.model.Company;
 import zerobase.dividend.model.ScrapedResult;
+import zerobase.dividend.model.constants.CacheKey;
 import zerobase.dividend.persist.CompanyRepository;
 import zerobase.dividend.persist.DividendRepository;
 import zerobase.dividend.persist.entity.CompanyEntity;
@@ -14,8 +17,10 @@ import zerobase.dividend.scraper.Scraper;
 
 import java.util.List;
 
+
 @Slf4j
 @Component
+@EnableCaching
 @AllArgsConstructor
 public class ScraperScheduler {
 
@@ -23,6 +28,7 @@ public class ScraperScheduler {
     private final Scraper yahooFinanceScraper;
     private final DividendRepository dividendRepository;
 
+    @CacheEvict(value = CacheKey.KEY_FINANCE, allEntries = true)
     @Scheduled(cron = "${scheduler.scrap.yahoo}")
     public void yahooFinanceScheduling() {
         List<CompanyEntity> companies = this.companyRepository.findAll();
@@ -30,10 +36,7 @@ public class ScraperScheduler {
         for (var company : companies) {
             log.info("scraping scheduler is started -> " + company.getName());
             ScrapedResult scrapedResult = this.yahooFinanceScraper.scrap(
-                    Company.builder()
-                            .name(company.getName())
-                            .ticker(company.getTicker())
-                            .build());
+                    new Company(company.getTicker(), company.getName()));
 
             scrapedResult.getDividends().stream()
                     .map(e -> new DividendEntity(company.getId(), e))
