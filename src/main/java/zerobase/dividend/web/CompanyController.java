@@ -1,10 +1,13 @@
 package zerobase.dividend.web;
 
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 import zerobase.dividend.model.Company;
+import zerobase.dividend.persist.entity.CompanyEntity;
 import zerobase.dividend.service.CompanyService;
 
 @RestController
@@ -20,8 +23,9 @@ public class CompanyController {
     }
 
     @GetMapping
-    public ResponseEntity<?> searchCompany() {
-        return null;
+    public ResponseEntity<?> searchCompany(final Pageable pageable) {
+        Page<CompanyEntity> companies = this.companyService.getAllCompany(pageable);
+        return ResponseEntity.ok(companies);
     }
 
     @PostMapping
